@@ -30,6 +30,7 @@ public class PlayerMovement : MonoBehaviour
     private void Start()
     {
         //тут мы начинаем свой скрипт, выравнивая игрока по клетке
+        // SnapToGrip() как раз-таки выравнивает, как думаете, что тут нужно сделать? :D
         characterController = GetComponent<CharacterController>();
 
         // SnapToGrid();
@@ -43,7 +44,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void HandleInput()
     {
-        // тут игрок ходит
+        // тут игрок ходит (на w вперед(?))
         if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
         {
             TryMove(-transform.forward);
@@ -54,7 +55,8 @@ public class PlayerMovement : MonoBehaviour
             TryMove(-transform.forward);
         }
 
-        // тут игрок поворачивает
+        // тут игрок поворачивает (если стоит -90f он поворачивает налево), подумайте, как сделать правильно?)
+        // получается у вас инвертирован поворот
         if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
         {
             StartCoroutine(RotatePlayer(-90f));
@@ -105,7 +107,7 @@ public class PlayerMovement : MonoBehaviour
         transform.position = targetPosition;
 
         // хм.. 
-        // isMoving = false;
+        isMoving = false;
     }
 
     private IEnumerator RotatePlayer(float angle)

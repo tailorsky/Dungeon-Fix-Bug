@@ -10,11 +10,7 @@ public enum LootType
 public class LootEntry
 {
     public LootType type;
-
-    // Оружие (если type = Weapon)
     public Weapon weapon;
-
-    // Хилка (если type = Heal)
     public int healAmount;
 
     [Range(0f, 100f)]
@@ -27,14 +23,10 @@ public class ChestLoot : MonoBehaviour
     [SerializeField] private LootEntry[] lootTable;
 
     [Header("Настройки сундука")]
-    // БАГ #13: сундук помечен как уже открытый с самого начала —
-    // игрок никогда не сможет его открыть, сразу получит "Сундук уже открыт!"
-    // Подсказка: каким должен быть сундук в начале игры — открытым или закрытым?
-    [SerializeField] private bool isOpened = true;
+    [SerializeField] private bool isOpened = false;
     [SerializeField] private GameObject openedChestModel;
     [SerializeField] private GameObject closedChestModel;
 
-    // Открытие сундука (вызывается игроком)
     public void Open(WeaponSystem weaponSystem, PlayerStats playerStats)
     {
         if (isOpened)
@@ -42,9 +34,10 @@ public class ChestLoot : MonoBehaviour
             Debug.Log("Сундук уже открыт!");
             return;
         }
-        //булевая переменная, которая даёт понять, открыт сундук или нет, все ли модели на месте, если и на месте, то как они работают?
-        isOpened = true;
+        // хм, а тут стоит состояние, что игрок не открыл сундук
+        isOpened = false;
 
+        // хм.. что-то не так
         if (closedChestModel != null) closedChestModel.SetActive(true);
         if (openedChestModel != null) openedChestModel.SetActive(false);
 
@@ -55,15 +48,16 @@ public class ChestLoot : MonoBehaviour
             Debug.Log("Сундук пуст...");
             return;
         }
-        //тут мы выбираем тип лута, как думаешь всё на месте?
+
+        // хм.. как будто что-то тут перепутано, посмотри внимательно :D
         switch (loot.type)
         {
-            case LootType.Weapon:
-                HandleHealLoot(loot, playerStats);
-                break;
-
             case LootType.Heal:
                 HandleWeaponLoot(loot, weaponSystem);
+                break;
+
+            case LootType.Weapon:
+                HandleHealLoot(loot, playerStats);
                 break;
         }
     }
@@ -83,8 +77,7 @@ public class ChestLoot : MonoBehaviour
         {
             cumulative += entry.dropChance;
 
-            // Подсказка: мы хотим выдать лут когда бросок "попал" в диапазон — он должен быть
-            // меньше накопленного значения или больше?
+            // тут какая-то ошибка, смотрите, сейчас вам выдаётся тот или иной предмет только тогда, когда оно наоборот не выпадает
             if (roll >= cumulative)
                 return entry;
         }
@@ -122,7 +115,7 @@ public class ChestLoot : MonoBehaviour
 
     private string FormatWeapon(Weapon w)
     {
-        return $"{w.weaponName} [{w.damageMin}-{w.damageMax} урона, {w.attackSpeed:0.00}s]";
+        return $"{w.weaponName} [{w.damageMin}-{w.damageMax} урона, {w.weaponTime:0.00}s]";
     }
 
     private Weapon CloneWeapon(Weapon original)
@@ -135,7 +128,7 @@ public class ChestLoot : MonoBehaviour
             type        = original.type,
             damageMin   = original.damageMin,
             damageMax   = original.damageMax,
-            attackSpeed = original.attackSpeed,
+            weaponTime  = original.weaponTime,
             description = original.description
         };
     }
@@ -150,7 +143,6 @@ public class ChestLoot : MonoBehaviour
         }
 
         Debug.Log("=== ТАБЛИЦА ЛУТА ===");
-
         float total = 0f;
 
         foreach (var entry in lootTable)
@@ -158,19 +150,9 @@ public class ChestLoot : MonoBehaviour
             total += entry.dropChance;
 
             if (entry.type == LootType.Weapon && entry.weapon != null)
-            {
-                Debug.Log(
-                    $"[Weapon] {entry.weapon.weaponName} | " +
-                    $"шанс: {entry.dropChance}% | " +
-                    $"урон: {entry.weapon.damageMin}-{entry.weapon.damageMax}"
-                );
-            }
+                Debug.Log($"[Weapon] {entry.weapon.weaponName} | шанс: {entry.dropChance}% | урон: {entry.weapon.damageMin}-{entry.weapon.damageMax}");
             else if (entry.type == LootType.Heal)
-            {
-                Debug.Log(
-                    $"[Heal] +{entry.healAmount} HP | шанс: {entry.dropChance}%"
-                );
-            }
+                Debug.Log($"[Heal] +{entry.healAmount} HP | шанс: {entry.dropChance}%");
         }
 
         Debug.Log($"Сумма шансов: {total}%");

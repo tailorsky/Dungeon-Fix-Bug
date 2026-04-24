@@ -1,21 +1,17 @@
 using System.Collections;
 using UnityEngine;
 
-// =====================================================
-// СКРИПТ: EnemyStats.cs
-// =====================================================
-
 public class EnemyStats : MonoBehaviour
 {
     [Header("Статы скелета")]
-    [SerializeField] private int maxHealth        = 0;
-    [SerializeField] private int damageMin        = 0;
-    [SerializeField] private int damageMax        = 0;
-    [SerializeField] private float attackSpeed    = 0.0f;  // skeleton_speed: секунд между ударами
-    [SerializeField] private float evasion        = 0.0f;  // skeleton_evasion: шанс уклонения [0..1]
-    [SerializeField] private int killExp          = 0;    // skeleton_kill_exp
+    [SerializeField] private int   maxHealth  = 0;
+    [SerializeField] private int   damageMin  = 0;
+    [SerializeField] private int   damageMax  = 0;
+    [SerializeField] private float attackTime = 0f; // секунд между ударами
+    [SerializeField] private float evasion    = 0f; // шанс уклонения [0..1]
+    [SerializeField] private int   killExp    = 0;
 
-    private int currentHealth;
+    private int  currentHealth;
     private bool isDead = false;
 
     private void Start()
@@ -26,10 +22,8 @@ public class EnemyStats : MonoBehaviour
     public void TakeDamage(int damage)
     {
         if (isDead) return;
-
         currentHealth -= damage;
         Debug.Log($"Скелет получил {damage} урона! HP: {currentHealth}/{maxHealth}");
-
         if (currentHealth <= 0)
             StartCoroutine(DieSequence());
     }
@@ -54,16 +48,11 @@ public class EnemyStats : MonoBehaviour
         Destroy(gameObject);
     }
 
-    // Бросает урон по равномерному распределению [damageMin, damageMax]
-    public int RollDamage()
-    {
-        return Random.Range(damageMin, damageMax + 1);
-    }
-
-    public bool IsDead()       => isDead;
-    public float AttackSpeed   => attackSpeed;
-    public float Evasion       => evasion;
-    public int KillExp         => killExp;
-    public int CurrentHealth   => currentHealth;
-    public int MaxHealth       => maxHealth;
+    public int  RollDamage()    => Random.Range(damageMin, damageMax + 1);
+    public bool IsDead()        => isDead;
+    public float AttackTime     => attackTime;
+    public float Evasion        => evasion;
+    public int  KillExp         => killExp;
+    public int  CurrentHealth   => currentHealth;
+    public int  MaxHealth       => maxHealth;
 }

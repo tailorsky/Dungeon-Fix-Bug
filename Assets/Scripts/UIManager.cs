@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -8,48 +9,45 @@ public class UIManager : MonoBehaviour
     [SerializeField] private PlayerStats playerStats;
 
     [Header("Здоровье")]
-    [SerializeField] private Slider healthBar;
-    [SerializeField] private TextMeshProUGUI healthText;
+    [SerializeField] private Slider           healthBar;
+    [SerializeField] private TextMeshProUGUI  healthText;
 
     [Header("Опыт и уровень")]
-    [SerializeField] private Slider xpBar;
-    [SerializeField] private TextMeshProUGUI xpText;
-    [SerializeField] private TextMeshProUGUI levelText;
+    [SerializeField] private Slider           xpBar;
+    [SerializeField] private TextMeshProUGUI  xpText;
+    [SerializeField] private TextMeshProUGUI  levelText;
 
     [Header("Статы")]
-    [SerializeField] private TextMeshProUGUI statsText;
+    [SerializeField] private TextMeshProUGUI  statsText;
 
     [Header("Инвентарь")]
-    [SerializeField] private Image keyIcon;
+    [SerializeField] private Image            keyIcon;
 
     [Header("Сообщения")]
-    [SerializeField] private TextMeshProUGUI messageText;
-    [SerializeField] private float messageDuration = 2f;
+    [SerializeField] private TextMeshProUGUI  messageText;
+    [SerializeField] private float            messageDuration = 2f;
 
     [Header("Панель прокачки")]
-    [SerializeField] private GameObject statUpPanel;
-    [SerializeField] private TextMeshProUGUI pendingPointsText;
-    
-    [SerializeField] private Button strengthButton;
-    [SerializeField] private Button enduranceButton;
-    [SerializeField] private Button agilityButton;
-    [SerializeField] private Button intelligenceButton;
-    
+    [SerializeField] private GameObject       statUpPanel;
+    [SerializeField] private TextMeshProUGUI  pendingPointsText;
+
+    [SerializeField] private Button           strengthButton;
+    [SerializeField] private Button           enduranceButton;
+    [SerializeField] private Button           intelligenceButton;
+
     [Header("Тексты характеристик")]
-    [SerializeField] private TextMeshProUGUI strengthValueText;
-    [SerializeField] private TextMeshProUGUI enduranceValueText;
-    [SerializeField] private TextMeshProUGUI agilityValueText;
-    [SerializeField] private TextMeshProUGUI intelligenceValueText;
+    [SerializeField] private TextMeshProUGUI  strengthValueText;
+    [SerializeField] private TextMeshProUGUI  enduranceValueText;
+    [SerializeField] private TextMeshProUGUI  intelligenceValueText;
 
     [Header("Враг")]
-    [SerializeField] private GameObject enemyPanel;
-    [SerializeField] private Slider enemyHealthBar;
-    [SerializeField] private TextMeshProUGUI enemyHealthText;
+    [SerializeField] private GameObject       enemyPanel;
+    [SerializeField] private Slider           enemyHealthBar;
+    [SerializeField] private TextMeshProUGUI  enemyHealthText;
 
     private Coroutine messageCoroutine;
-    private bool isFirstTime = true; // НОВОЕ: флаг первого показа
+    private bool isFirstTime = true;
 
-    // ─── Инициализация ────────────────────────────────────────────────────────
     private void Start()
     {
         if (playerStats == null)
@@ -66,7 +64,6 @@ public class UIManager : MonoBehaviour
 
         strengthButton?.onClick    .AddListener(() => SpendPoint(StatType.Strength));
         enduranceButton?.onClick   .AddListener(() => SpendPoint(StatType.Endurance));
-        agilityButton?.onClick     .AddListener(() => SpendPoint(StatType.Agility));
         intelligenceButton?.onClick.AddListener(() => SpendPoint(StatType.Intelligence));
 
         ShowKeyIcon(false);
@@ -76,8 +73,6 @@ public class UIManager : MonoBehaviour
         UpdateXpBar(playerStats.CurrentXp, playerStats.XpToNextLevel);
         UpdateLevel(playerStats.CurrentLevel);
         UpdateStatsText();
-        
-        // НОВОЕ: Панель может быть показана сразу в Start через OnStatPointReady
     }
 
     private void OnDestroy()
@@ -91,30 +86,24 @@ public class UIManager : MonoBehaviour
         playerStats.OnAllStatsDistributed -= HideStatUpPanel;
     }
 
-    // ─── HP ──────────────────────────────────────────────────────────────────
     private void UpdateHealthBar(int current, int max)
     {
-        if (healthBar != null)
-        {
-            healthBar.maxValue = max;
-            healthBar.value    = current;
-        }
-
-        if (healthText != null)
-            healthText.text = $"{current}/{max}";
+        if (healthBar != null) { healthBar.maxValue = max; healthBar.value = current; }
+        if (healthText != null) healthText.text = $"{current}/{max}";
     }
 
-    // ─── Опыт и уровень ──────────────────────────────────────────────────────
     private void UpdateXpBar(int current, int toNext)
     {
+        bool maxed = playerStats.CurrentLevel >= playerStats.MaxLevel;
+
         if (xpBar != null)
         {
-            xpBar.maxValue = toNext;
-            xpBar.value    = current;
+            xpBar.maxValue = maxed ? 1 : toNext;
+            xpBar.value    = maxed ? 1 : current;
         }
 
         if (xpText != null)
-            xpText.text = $"{current}/{toNext} XP";
+            xpText.text = maxed ? "MAX" : $"{current}/{toNext} XP";
     }
 
     private void UpdateLevel(int level)
@@ -123,15 +112,12 @@ public class UIManager : MonoBehaviour
             levelText.text = $"Ур. {level}";
     }
 
-    // ─── Статы ───────────────────────────────────────────────────────────────
     private void UpdateStatsText()
     {
         if (statsText == null || playerStats == null) return;
-
         statsText.text =
             $"СИЛ:{playerStats.Strength}  " +
             $"ВЫН:{playerStats.Endurance}  " +
-            $"ЛОВ:{playerStats.Agility}  " +
             $"ИНТ:{playerStats.Intelligence}";
     }
 
@@ -139,123 +125,80 @@ public class UIManager : MonoBehaviour
     {
         if (playerStats == null) return;
 
-        if (strengthValueText != null)
-            strengthValueText.text = $"Уровень: {playerStats.Strength}";
-        
-        if (enduranceValueText != null)
-            enduranceValueText.text = $"Уровень: {playerStats.Endurance}";
-        
-        if (agilityValueText != null)
-            agilityValueText.text = $"Уровень: {playerStats.Agility}";
-        
-        if (intelligenceValueText != null)
-            intelligenceValueText.text = $"Уровень: {playerStats.Intelligence}";
-        
-        if (pendingPointsText != null)
-            pendingPointsText.text = $"Очков: {playerStats.PendingPoints}";
+        if (strengthValueText    != null) strengthValueText.text    = $"Уровень: {playerStats.Strength}";
+        if (enduranceValueText   != null) enduranceValueText.text   = $"Уровень: {playerStats.Endurance}";
+        if (intelligenceValueText != null) intelligenceValueText.text = $"Уровень: {playerStats.Intelligence}";
+        if (pendingPointsText    != null) pendingPointsText.text    = $"Очков: {playerStats.PendingPoints}";
     }
 
-    // ─── Панель прокачки ─────────────────────────────────────────────────────
     private void ShowStatUpPanel()
     {
-        if (statUpPanel != null)
-            statUpPanel.SetActive(true);
-
+        if (statUpPanel != null) statUpPanel.SetActive(true);
         UpdateStatValuesInPanel();
-        
-        // НОВОЕ: Меняем заголовок в зависимости от ситуации
-        if (isFirstTime)
-        {
-            ShowMessage("Распредели стартовые очки характеристик!");
-            isFirstTime = false;
-        }
-        else
-        {
-            ShowMessage("Уровень повышен! Распредели очко характеристики.");
-        }
-        
+
+        ShowMessage(isFirstTime
+            ? "Распредели стартовые очки характеристик!"
+            : "Уровень повышен! Распредели очко характеристики.");
+
+        isFirstTime  = false;
         Time.timeScale = 0f;
     }
 
     private void HideStatUpPanel()
     {
-        if (statUpPanel != null)
-            statUpPanel.SetActive(false);
-        
+        if (statUpPanel != null) statUpPanel.SetActive(false);
         Time.timeScale = 1f;
     }
 
     private void SpendPoint(StatType stat)
     {
         if (playerStats == null) return;
-
-        bool success = playerStats.SpendStatPoint(stat);
-
-        if (success)
+        if (playerStats.SpendStatPoint(stat))
         {
             UpdateStatsText();
             UpdateStatValuesInPanel();
         }
     }
 
-    // ─── Инвентарь ───────────────────────────────────────────────────────────
     public void ShowKeyIcon(bool show)
     {
-        if (keyIcon != null)
-            keyIcon.gameObject.SetActive(show);
+        if (keyIcon != null) keyIcon.gameObject.SetActive(show);
     }
 
-    // ─── Сообщения ───────────────────────────────────────────────────────────
     public void ShowMessage(string text)
     {
         if (messageText == null) return;
-
-        if (messageCoroutine != null)
-            StopCoroutine(messageCoroutine);
-
+        if (messageCoroutine != null) StopCoroutine(messageCoroutine);
         messageCoroutine = StartCoroutine(ShowMessageCoroutine(text));
     }
 
-    private System.Collections.IEnumerator ShowMessageCoroutine(string text)
+    private IEnumerator ShowMessageCoroutine(string text)
     {
         messageText.text = text;
         SetMessageActive(true);
-
         yield return new WaitForSecondsRealtime(messageDuration);
-
         SetMessageActive(false);
     }
 
     private void SetMessageActive(bool active)
     {
-        if (messageText != null)
-            messageText.gameObject.SetActive(active);
+        if (messageText != null) messageText.gameObject.SetActive(active);
     }
 
-    // ─── Враг ────────────────────────────────────────────────────────────────
     public void ShowEnemy(EnemyStats enemy)
     {
-        if (enemyPanel != null)
-            enemyPanel.SetActive(true);
-
+        if (enemyPanel != null) enemyPanel.SetActive(true);
         UpdateEnemyHealth(enemy.CurrentHealth, enemy.MaxHealth);
     }
 
     public void HideEnemy()
     {
-        if (enemyPanel != null)
-            enemyPanel.SetActive(false);
+        if (enemyPanel != null) enemyPanel.SetActive(false);
     }
 
     public void UpdateEnemyHealth(int current, int max)
     {
-        if (enemyHealthBar != null)
-        {
-            enemyHealthBar.maxValue = max;
-            enemyHealthBar.value = current;
-        }
-
-        if (enemyHealthText != null)
-            enemyHealthText.text = $"{current}/{max}";
+        if (enemyHealthBar != null) { enemyHealthBar.maxValue = max; enemyHealthBar.value = current; }
+        if (enemyHealthText != null) enemyHealthText.text = $"{current}/{max}";
     }
 }

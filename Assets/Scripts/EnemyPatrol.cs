@@ -35,7 +35,7 @@ public class EnemyPatrol : MonoBehaviour
         transform.position = GetCellPosition(transform.position);
 
         // тут ставится начальная точка
-        currentTarget = pointB;
+        currentTarget = pointA;
 
         enemyStats = GetComponent<EnemyStats>();
 
@@ -65,8 +65,8 @@ public class EnemyPatrol : MonoBehaviour
             yield return StartCoroutine(MoveToPoint(currentTarget.position));
 
             yield return new WaitForSeconds(waitTime);
-            //тут работает анимация, подумай, что тут не так?
-            animator.SetBool("IsWalking", true);
+            //тут работает анимация, подумай, что тут не так? всё ли тут супер? :D
+            animator.SetBool("IsWalking", false);
 
             currentTarget = (currentTarget == pointA) ? pointB : pointA;
         }
@@ -113,7 +113,8 @@ public class EnemyPatrol : MonoBehaviour
     {
         animator.SetBool("InCombat", true);
         inCombat = true;
-        //тут враг поворачивает на игрока
+        //тут враг поворачивает на игрока (тут как думаете, есть ли ошибка, нам нужно по сути повернуть к игроку, т.е. к playerTransform.position)
+        //подумай что нужно убрать в 118 строке
         yield return StartCoroutine(RotateTowards(transform.position - playerTransform.position));
 
         if (playerCombat != null && enemyStats != null)

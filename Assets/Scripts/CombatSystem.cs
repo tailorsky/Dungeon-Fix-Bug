@@ -1,25 +1,12 @@
 using System.Collections;
 using UnityEngine;
 
-// =====================================================
-// СКРИПТ: CombatSystem.cs
-// ОПИСАНИЕ: Реалтаймовая боёвка.
-// Игрок бьёт каждые weapon_speed секунд,
-// скелет бьёт каждые skeleton_speed секунд,
-// оба могут уклоняться.
-//
-// КАК ПОДКЛЮЧИТЬ:
-// 1. Повесь на объект "Player"
-// 2. Назначь playerStats, uiManager, cameraTransform в Inspector
-// 3. WeaponSystem — опционально
-// =====================================================
-
 public class CombatSystem : MonoBehaviour
 {
     [Header("Оружие игрока (fallback если нет WeaponSystem)")]
-    [SerializeField] private int weaponDamageMin;
-    [SerializeField] private int weaponDamageMax;
-    [SerializeField] private float weaponSpeed;
+    [SerializeField] private int   weaponDamageMin;
+    [SerializeField] private int   weaponDamageMax;
+    [SerializeField] private float weaponTime; // секунд между ударами
 
     [Header("Атака")]
     [SerializeField] private float attackRange = 3.5f;
@@ -31,14 +18,14 @@ public class CombatSystem : MonoBehaviour
     [SerializeField] private float cameraLerpSpeed      = 5f;
 
     [Header("Связи")]
-    [SerializeField] private PlayerStats playerStats;
-    [SerializeField] private UIManager uiManager;
-    [SerializeField] private WeaponSystem weaponSystem;
+    [SerializeField] private PlayerStats    playerStats;
+    [SerializeField] private UIManager      uiManager;
+    [SerializeField] private WeaponSystem   weaponSystem;
     [SerializeField] private PlayerMovement playerMovement;
 
-    private EnemyStats   currentEnemy;
-    private EnemyPatrol  currentEnemyAI;
-    private bool         inCombat = false;
+    private EnemyStats  currentEnemy;
+    private EnemyPatrol currentEnemyAI;
+    private bool        inCombat = false;
 
     private Coroutine playerAttackLoop;
     private Coroutine enemyAttackLoop;
@@ -78,19 +65,17 @@ public class CombatSystem : MonoBehaviour
 
     public void StartCombat(EnemyStats enemy)
     {
-        //тут мы начинаем свой бой, можем ли мы убегать или нет?
         if (inCombat) return;
 
-        if (playerMovement != null)
-            playerMovement.enabled = true;
-        
+        // почему тут комментарий?🤔
+        // if (playerMovement != null)
+        //     playerMovement.enabled = false;
 
-        //а что это делает?
         uiManager?.ShowEnemy(enemy);
 
         if (weaponSystem != null)
         {
-            weaponSpeed = weaponSystem.GetAttackSpeed();
+            weaponTime     = weaponSystem.GetWeaponTime();
             weaponDamageMin = weaponSystem.GetDamageMin();
             weaponDamageMax = weaponSystem.GetDamageMax();
         }
@@ -106,19 +91,18 @@ public class CombatSystem : MonoBehaviour
 
         uiManager?.ShowMessage("Бой!");
 
-
-        //хм всё ли тут на месте
-        playerAttackLoop = StartCoroutine(EnemyAttackLoop());
-        enemyAttackLoop  = StartCoroutine(PlayerAttackLoop());
+        // Исправлено: корутины назначены правильно
+        playerAttackLoop = StartCoroutine(PlayerAttackLoop());
+        enemyAttackLoop  = StartCoroutine(EnemyAttackLoop());
     }
 
     public void EndCombat(bool playerWon)
     {
-        //здесь мы заканчиваем бой
         if (!inCombat) return;
 
-        // if (playerMovement != null) 
-        //     playerMovement.enabled = true;
+        //а мы вернули игроку управление?..
+        if (playerMovement != null)
+            playerMovement.enabled = false;
 
         inCombat = false;
 
@@ -137,7 +121,7 @@ public class CombatSystem : MonoBehaviour
         while (inCombat)
         {
             yield return PlayerAttack();
-            yield return new WaitForSeconds(weaponSpeed);
+            yield return new WaitForSeconds(weaponTime);
         }
     }
 
@@ -167,7 +151,6 @@ public class CombatSystem : MonoBehaviour
         int totalDamage  = playerStats.CalculateDamage(weaponDamage);
 
         currentEnemy.TakeDamage(totalDamage);
-
         uiManager?.UpdateEnemyHealth(currentEnemy.CurrentHealth, currentEnemy.MaxHealth);
         uiManager?.ShowMessage($"Удар! -{totalDamage} скелету");
 
@@ -185,9 +168,8 @@ public class CombatSystem : MonoBehaviour
         if (currentEnemy != null && currentEnemy.IsDead())
         {
             playerStats.GainXp(currentEnemy.KillExp);
-
-            //тут мы заканчиваем бой, ведь так?
-            EndCombat(false);
+            // хм.. а мы точно заканчиваем бой в строке ниже? 🤔
+            EndCombat(true);
         }
     }
 
@@ -195,7 +177,7 @@ public class CombatSystem : MonoBehaviour
     {
         while (inCombat)
         {
-            yield return new WaitForSeconds(currentEnemy.AttackSpeed);
+            yield return new WaitForSeconds(currentEnemy.AttackTime);
             yield return EnemyAttack();
         }
     }
@@ -215,12 +197,6 @@ public class CombatSystem : MonoBehaviour
             }
         }
 
-        if (Random.value < playerStats.GetDodgeChance())
-        {
-            uiManager?.ShowMessage("Ты уклонился!");
-            yield break;
-        }
-
         int damage = currentEnemy.RollDamage();
         playerStats.TakeDamage(damage);
         uiManager?.ShowMessage($"Скелет бьёт! -{damage} HP");
@@ -228,16 +204,10 @@ public class CombatSystem : MonoBehaviour
 
     private int RollWeaponDamage()
     {
-        int min = weaponDamageMin;
-        int max = weaponDamageMax;
-
         if (weaponSystem != null)
-        {
-            min = weaponSystem.GetDamageMin();
-            max = weaponSystem.GetDamageMax();
-        }
+            return Random.Range(weaponSystem.GetDamageMin(), weaponSystem.GetDamageMax() + 1);
 
-        return Random.Range(min, max + 1);
+        return Random.Range(weaponDamageMin, weaponDamageMax + 1);
     }
 
     public void OnEnemySpotted(EnemyStats enemy)
